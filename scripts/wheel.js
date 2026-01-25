@@ -8,8 +8,9 @@ class WheelManager {
         this.riggedOrder = []; // Thứ tự điều hướng bí mật
         this.wheel = document.getElementById("wheel");
         this.colors = [
-            "#3369e8", "#d50f25", "#eeb211", "#009925", 
-            "#ff887c", "#dc2127", "#f3b562", "#8ebca7"
+            "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", 
+            "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E2",
+            "#F8B739", "#6C5CE7", "#FD79A8", "#00B894"
         ];
     }
 
