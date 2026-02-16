@@ -176,10 +176,10 @@ class UIManager {
         const modal = document.getElementById('resultModal');
         document.getElementById('winnerName').innerText = winner;
         
-        // Đổi màu header và buttons theo màu xanh lá cố định
+        // Đổi màu header theo màu cánh cung trúng
         const modalHeader = modal.querySelector('.modal-header');
         if (modalHeader) {
-            modalHeader.style.backgroundColor = '#009925';
+            modalHeader.style.backgroundColor = color;
         }
         // Đổi màu các nút action
         modal.querySelectorAll('.btn-remove-winner, .btn-remove-all').forEach(btn => {

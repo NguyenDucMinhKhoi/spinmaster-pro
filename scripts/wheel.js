@@ -4,8 +4,9 @@ class WheelManager {
         this.names = [];
         this.currentRotation = 0;
         this.isSpinning = false;
-        this.spinCount = 0;
         this.riggedOrder = []; // Thứ tự điều hướng bí mật
+        this.riggedUsed = new Set(); // Theo dõi tên đã được rigged
+        this.lastNamesSnapshot = ''; // Snapshot dé phát hiện thay đổi
         this.wheel = document.getElementById("wheel");
         this.colors = [
             "#3369e8", "#009925", "#EEB211", "#d50f25",
@@ -64,6 +65,30 @@ class WheelManager {
     }
 
     setNames(names) {
+        // Detect if the base set of names changed (not just removal from spinning)
+        const sortedNew = [...names].sort().join('|');
+        const sortedOld = [...this.names].sort().join('|');
+        
+        // Reset rigged khi:
+        // 1. Tên được thêm lại (dài hơn hoặc khác biệt)
+        // 2. Danh sách được viết lại hoàn toàn
+        const namesAdded = names.length > this.names.length;
+        const namesChanged = sortedNew !== sortedOld && namesAdded;
+        const fullRiggedPresent = this.riggedOrder.length > 0 && this.riggedOrder.every(n => names.includes(n));
+        const is4WithAn = names.length === 4 && names.includes('An');
+        
+        if (fullRiggedPresent || (namesChanged && (fullRiggedPresent || is4WithAn))) {
+            this.riggedUsed = new Set();
+        }
+        // Đặc biệt: reset khi chuyển sang scenario 4 người với An
+        if (is4WithAn && this.names.length !== 4) {
+            this.riggedUsed = new Set();
+        }
+        // Đặc biệt: reset khi chuyển sang scenario 6 người rigged
+        if (fullRiggedPresent && !this.riggedOrder.every(n => this.names.includes(n))) {
+            this.riggedUsed = new Set();
+        }
+        
         this.names = names;
         this.updateWheel();
     }
@@ -87,21 +112,27 @@ class WheelManager {
         let targetIndex;
         let selectedName;
 
-        // KỊCH BẢN BÍ MẬT: Ưu tiên riggedOrder nếu có
+        // KỊCH BẢN BÍ MẬT: Tìm tên rigged tiếp theo còn trong danh sách
         // Trường hợp đặc biệt: 4 người có "An" → An ra đầu tiên
-        let activeRiggedOrder = this.riggedOrder;
+        let activeOrder = this.riggedOrder;
         if (this.names.length === 4 && this.names.includes("An")) {
-            activeRiggedOrder = ["An"];
+            activeOrder = ["An"];
         }
 
-        if (this.spinCount < activeRiggedOrder.length && this.names.includes(activeRiggedOrder[this.spinCount])) {
-            selectedName = activeRiggedOrder[this.spinCount];
-            // Tìm TẤT CẢ các vị trí có tên này
-            const allIndices = this.names.map((name, idx) => name === selectedName ? idx : -1)
-                                         .filter(idx => idx !== -1);
-            // Random chọn 1 trong các vị trí
-            targetIndex = allIndices[Math.floor(Math.random() * allIndices.length)];
-        } else {
+        let riggedFound = false;
+        for (const riggedName of activeOrder) {
+            if (!this.riggedUsed.has(riggedName) && this.names.includes(riggedName)) {
+                selectedName = riggedName;
+                this.riggedUsed.add(riggedName);
+                // Tìm TẤT CẢ các vị trí có tên này
+                const allIndices = this.names.map((name, idx) => name === selectedName ? idx : -1)
+                                             .filter(idx => idx !== -1);
+                targetIndex = allIndices[Math.floor(Math.random() * allIndices.length)];
+                riggedFound = true;
+                break;
+            }
+        }
+        if (!riggedFound) {
             targetIndex = Math.floor(Math.random() * this.names.length);
             selectedName = this.names[targetIndex];
         }
@@ -134,8 +165,6 @@ class WheelManager {
         
         this.wheel.style.transform = `rotate(${this.currentRotation}deg)`;
 
-        this.spinCount++;
-
         const winnerColor = this.colors[targetIndex % this.colors.length];
         return {
             winner: selectedName,
@@ -147,7 +176,7 @@ class WheelManager {
     reset() {
         this.currentRotation = 0;
         this.isSpinning = false;
-        this.spinCount = 0;
+        this.riggedUsed = new Set();
         this.wheel.style.transform = `rotate(0deg)`;
     }
 
